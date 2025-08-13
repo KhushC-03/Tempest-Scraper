@@ -20,30 +20,32 @@ const htmlTemplate = `
     <title>Tempest Image Finder</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        
-        * {
+        html, body {
+            height: 100%;
             margin: 0;
             padding: 0;
+            overflow: hidden;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-y: none;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+            color: #f1f5f9;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        * {
             box-sizing: border-box;
         }
-        
         body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
-            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
-            color: #f1f5f9;
+            min-height: 100%;
             animation: gradientShift 12s ease infinite;
         }
-        
         @keyframes gradientShift {
             0%, 100% { background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%); }
             50% { background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e293b 100%); }
         }
-        
         .container {
             background: rgba(15, 23, 42, 0.95);
             backdrop-filter: blur(20px);
@@ -55,9 +57,10 @@ const htmlTemplate = `
             width: 100%;
             text-align: center;
             position: relative;
-            overflow: hidden;
+            overflow: auto;
+            max-height: 100vh;
+            -webkit-overflow-scrolling: touch;
         }
-        
         .container::before {
             content: '';
             position: absolute;
@@ -68,12 +71,10 @@ const htmlTemplate = `
             background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4);
             animation: shimmer 3s ease-in-out infinite;
         }
-        
         @keyframes shimmer {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.7; }
         }
-        
         h1 {
             color: #f1f5f9;
             margin-bottom: 12px;
@@ -85,14 +86,12 @@ const htmlTemplate = `
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-        
         .subtitle {
             color: #94a3b8;
             margin-bottom: 20px;
             font-size: 1.1rem;
             font-weight: 400;
         }
-        
         .disclaimer {
             background: rgba(34, 197, 94, 0.1);
             border: 1px solid rgba(34, 197, 94, 0.3);
@@ -104,7 +103,6 @@ const htmlTemplate = `
             line-height: 1.4;
             text-align: left;
         }
-        
         .disclaimer-title {
             font-weight: 600;
             margin-bottom: 8px;
@@ -112,7 +110,6 @@ const htmlTemplate = `
             align-items: center;
             gap: 8px;
         }
-        
         .warning {
             background: rgba(245, 158, 11, 0.1);
             border: 1px solid rgba(245, 158, 11, 0.3);
@@ -125,13 +122,11 @@ const htmlTemplate = `
             align-items: center;
             gap: 8px;
         }
-        
         .form-group {
             margin-bottom: 32px;
             text-align: left;
             position: relative;
         }
-        
         label {
             display: block;
             margin-bottom: 12px;
@@ -139,11 +134,9 @@ const htmlTemplate = `
             font-weight: 600;
             font-size: 0.95rem;
         }
-        
         .input-container {
             position: relative;
         }
-        
         input {
             width: 100%;
             padding: 18px 24px;
@@ -156,7 +149,6 @@ const htmlTemplate = `
             font-family: 'JetBrains Mono', 'Courier New', monospace;
             font-weight: 500;
         }
-        
         input:focus {
             outline: none;
             border-color: #3b82f6;
@@ -164,66 +156,10 @@ const htmlTemplate = `
             transform: translateY(-2px);
             background: rgba(30, 41, 59, 1);
         }
-        
         input::placeholder {
             color: #6b7280;
             font-weight: 400;
         }
-        
-        .suggestions {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: rgba(15, 23, 42, 0.98);
-            border: 2px solid #374151;
-            border-top: none;
-            border-radius: 0 0 16px 16px;
-            max-height: 200px;
-            overflow-y: auto;
-            z-index: 10;
-            display: none;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-        }
-        
-        .suggestion-item {
-            padding: 14px 24px;
-            cursor: pointer;
-            font-family: 'JetBrains Mono', 'Courier New', monospace;
-            font-size: 14px;
-            color: #e2e8f0;
-            border-bottom: 1px solid #374151;
-            transition: all 0.2s ease;
-            font-weight: 500;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .suggestion-item:hover {
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            color: white;
-            transform: translateX(4px);
-        }
-        
-        .suggestion-item:last-child {
-            border-bottom: none;
-        }
-        
-        .suggestion-remove {
-            color: #f87171;
-            font-size: 12px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            background: rgba(248, 113, 113, 0.1);
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        }
-        
-        .suggestion-item:hover .suggestion-remove {
-            opacity: 1;
-        }
-        
         button {
             background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
             color: white;
@@ -239,7 +175,6 @@ const htmlTemplate = `
             overflow: hidden;
             min-width: 160px;
         }
-        
         button::before {
             content: '';
             position: absolute;
@@ -250,34 +185,21 @@ const htmlTemplate = `
             background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
             transition: left 0.5s;
         }
-        
         button:hover {
             transform: translateY(-3px);
             box-shadow: 0 20px 40px rgba(59, 130, 246, 0.4);
         }
-        
         button:hover::before {
             left: 100%;
         }
-        
         button:active {
             transform: translateY(-1px);
         }
-        
         button:disabled {
             opacity: 0.7;
             cursor: not-allowed;
             transform: none;
         }
-        
-        .clear-history {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            font-size: 14px;
-            padding: 12px 24px;
-            margin-left: 12px;
-            min-width: auto;
-        }
-        
         .image-container {
             margin-top: 40px;
             border-radius: 20px;
@@ -287,7 +209,6 @@ const htmlTemplate = `
             border: 3px solid rgba(71, 85, 105, 0.5);
             position: relative;
         }
-        
         .image-container::before {
             content: '';
             position: absolute;
@@ -299,7 +220,6 @@ const htmlTemplate = `
             pointer-events: none;
             z-index: 1;
         }
-        
         .image-container img {
             width: 100%;
             height: auto;
@@ -309,11 +229,9 @@ const htmlTemplate = `
             height: auto;
             border-radius: 16px;
         }
-        
         .image-container:hover img {
             transform: scale(1.02);
         }
-        
         .image-download-hint {
             margin-top: 16px;
             color: #94a3b8;
@@ -323,7 +241,6 @@ const htmlTemplate = `
             border-radius: 12px;
             font-style: italic;
         }
-        
         .loading {
             display: none;
             margin-top: 32px;
@@ -334,7 +251,6 @@ const htmlTemplate = `
             flex-direction: column;
             gap: 20px;
         }
-        
         .loading-spinner {
             width: 48px;
             height: 48px;
@@ -343,22 +259,18 @@ const htmlTemplate = `
             border-radius: 50%;
             animation: spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
         }
-        
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        
         .loading-text {
             font-size: 1.1rem;
             font-weight: 500;
         }
-        
         .loading-dots {
             display: flex;
             gap: 6px;
         }
-        
         .loading-dot {
             width: 10px;
             height: 10px;
@@ -366,10 +278,8 @@ const htmlTemplate = `
             border-radius: 50%;
             animation: bounce 1.4s ease-in-out infinite both;
         }
-        
         .loading-dot:nth-child(1) { animation-delay: -0.32s; }
         .loading-dot:nth-child(2) { animation-delay: -0.16s; }
-        
         @keyframes bounce {
             0%, 80%, 100% {
                 transform: scale(0);
@@ -378,7 +288,6 @@ const htmlTemplate = `
                 transform: scale(1);
             }
         }
-        
         .error {
             color: #f87171;
             margin-top: 24px;
@@ -391,7 +300,6 @@ const htmlTemplate = `
             font-weight: 500;
             backdrop-filter: blur(10px);
         }
-        
         .status-info {
             margin-top: 24px;
             padding: 16px;
@@ -404,21 +312,17 @@ const htmlTemplate = `
             font-weight: 500;
             backdrop-filter: blur(10px);
         }
-
         @media (max-width: 640px) {
             .container {
                 padding: 32px 24px;
                 margin: 10px;
             }
-            
             h1 {
                 font-size: 2rem;
             }
-            
             input, button {
                 padding: 16px 20px;
             }
-            
             .image-download-hint {
                 font-size: 0.8rem;
             }
@@ -426,46 +330,42 @@ const htmlTemplate = `
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="container" id="mainContainer">
         <h1>Image Finder</h1>
         <p class="subtitle">Find and retrieve your images instantly ✨</p>
-        
+
         <div class="disclaimer">
             <div class="disclaimer-title">
                 🔒 Privacy Notice
             </div>
             <div>Images are fetched directly from Tempest and displayed in your browser only. No images are stored on our servers or visible to anyone else. Your image searches are completely private.</div>
         </div>
-        
+
         <div class="warning">
             ⚠️ Large images may take some time to process and load
         </div>
-        
-        <form id="photoForm">
+
+        <form id="photoForm" novalidate>
             <div class="form-group">
                 <label for="photoId">Image ID</label>
                 <div class="input-container">
-                    <input 
-                        type="text" 
-                        id="photoId" 
-                        name="photoId" 
-                        value="" 
+                    <input
+                        type="text"
+                        id="photoId"
+                        name="photoId"
+                        value=""
                         placeholder="Enter your image ID..."
                         autocomplete="off"
                         required
                     >
-                    <div class="suggestions" id="suggestions"></div>
                 </div>
             </div>
-            
+
             <button type="submit" id="submitBtn">
                 <span class="btn-text">Get Image</span>
             </button>
-            <button type="button" id="clearHistoryBtn" class="clear-history" style="display: none;">
-                Clear History
-            </button>
         </form>
-        
+
         <div class="loading" id="loading">
             <div class="loading-spinner"></div>
             <div class="loading-text">Finding your image...</div>
@@ -475,12 +375,12 @@ const htmlTemplate = `
                 <div class="loading-dot"></div>
             </div>
         </div>
-        
+
         <div class="error" id="error"></div>
         <div class="status-info" id="statusInfo"></div>
-        
-        <div class="image-container" id="imageContainer">
-            <img id="photo" src="" alt="Retrieved Image" crossorigin="anonymous">
+
+        <div class="image-container" id="imageContainer" aria-live="polite">
+            <img id="photo" src="" alt="Retrieved Image">
             <div class="image-download-hint">
                 📱 On mobile: Long press the image to save to your camera roll
             </div>
@@ -488,246 +388,96 @@ const htmlTemplate = `
     </div>
 
     <script>
-        let recentIds = [];
-        
-        function loadRecentIds() {
-            try {
-                const stored = localStorage.getItem('tempest-recent-ids');
-                return stored ? JSON.parse(stored) : [];
-            } catch (e) {
-                console.warn('Could not load recent IDs:', e);
-                return [];
-            }
-        }
-        
-        function saveRecentIds(ids) {
-            try {
-                localStorage.setItem('tempest-recent-ids', JSON.stringify(ids));
-                recentIds = ids;
-            } catch (e) {
-                console.warn('Could not save recent IDs:', e);
-            }
-        }
-        
-        recentIds = loadRecentIds();
-        
         const photoIdInput = document.getElementById('photoId');
-        const suggestionsDiv = document.getElementById('suggestions');
-        const clearHistoryBtn = document.getElementById('clearHistoryBtn');
-        
-        photoIdInput.addEventListener('focus', showSuggestions);
-        photoIdInput.addEventListener('input', filterSuggestions);
-        
-        clearHistoryBtn.addEventListener('click', function() {
-            recentIds = [];
-            saveRecentIds(recentIds);
-            hideSuggestions();
-            clearHistoryBtn.style.display = 'none';
-        });
-        
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.input-container')) {
-                hideSuggestions();
-            }
-        });
-        
-        let touchStartY = 0;
-        let isImageTouch = false;
-        
-        document.addEventListener('touchstart', function(e) {
-            isImageTouch = e.target.tagName === 'IMG';
-            if (isImageTouch) {
-                touchStartY = e.touches[0].clientY;
-                e.stopPropagation();
-            }
-        }, { passive: false });
-        
-        document.addEventListener('touchmove', function(e) {
-            if (isImageTouch) {
-                e.stopPropagation();
-            }
-        }, { passive: false });
-        
-        document.addEventListener('touchend', function(e) {
-            if (isImageTouch) {
-                e.stopPropagation();
-            }
-            isImageTouch = false;
-        }, { passive: false });
-        
-        document.addEventListener('contextmenu', function(e) {
-            if (e.target.tagName === 'IMG') {
-                e.stopPropagation();
-                return true;
-            }
+        const form = document.getElementById('photoForm');
+
+        form.addEventListener('submit', async function(e) {
             e.preventDefault();
-            return false;
-        });
-        
-        function showSuggestions() {
-            if (recentIds.length > 0) {
-                updateSuggestionsList(recentIds);
-                suggestionsDiv.style.display = 'block';
-                clearHistoryBtn.style.display = 'inline-block';
-            }
-        }
-        
-        function filterSuggestions() {
-            const value = photoIdInput.value.toLowerCase();
-            if (value === '') {
-                updateSuggestionsList(recentIds);
-            } else {
-                const filtered = recentIds.filter(id => 
-                    id.toLowerCase().includes(value)
-                );
-                updateSuggestionsList(filtered);
-            }
-            
-            if (suggestionsDiv.children.length > 0) {
-                suggestionsDiv.style.display = 'block';
-            } else {
-                suggestionsDiv.style.display = 'none';
-            }
-        }
-        
-        function updateSuggestionsList(ids) {
-            suggestionsDiv.innerHTML = '';
-            ids.forEach(id => {
-                const div = document.createElement('div');
-                div.className = 'suggestion-item';
-                
-                const idSpan = document.createElement('span');
-                idSpan.textContent = id;
-                
-                const removeBtn = document.createElement('span');
-                removeBtn.className = 'suggestion-remove';
-                removeBtn.textContent = '×';
-                removeBtn.title = 'Remove from history';
-                
-                div.appendChild(idSpan);
-                div.appendChild(removeBtn);
-                
-                idSpan.addEventListener('click', function() {
-                    photoIdInput.value = id;
-                    hideSuggestions();
-                });
-                
-                removeBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    removeFromRecentIds(id);
-                    filterSuggestions();
-                });
-                
-                suggestionsDiv.appendChild(div);
-            });
-        }
-        
-        function hideSuggestions() {
-            suggestionsDiv.style.display = 'none';
-        }
-        
-        function addToRecentIds(id) {
-            recentIds = recentIds.filter(existingId => existingId !== id);
-            recentIds.unshift(id);
-            recentIds = recentIds.slice(0, 10);
-            saveRecentIds(recentIds);
-            clearHistoryBtn.style.display = recentIds.length > 0 ? 'inline-block' : 'none';
-        }
-        
-        function removeFromRecentIds(id) {
-            recentIds = recentIds.filter(existingId => existingId !== id);
-            saveRecentIds(recentIds);
-            if (recentIds.length === 0) {
-                clearHistoryBtn.style.display = 'none';
-            }
-        }
-        
-        clearHistoryBtn.style.display = recentIds.length > 0 ? 'inline-block' : 'none';
-        
-        document.getElementById('photoForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const photoId = document.getElementById('photoId').value.trim();
+
+            const photoId = photoIdInput.value.trim();
             const loading = document.getElementById('loading');
             const error = document.getElementById('error');
             const statusInfo = document.getElementById('statusInfo');
             const imageContainer = document.getElementById('imageContainer');
             const photo = document.getElementById('photo');
             const submitBtn = document.getElementById('submitBtn');
-            
+
             if (!photoId) {
                 error.textContent = '🤔 Please enter an image ID first!';
                 error.style.display = 'block';
                 return;
             }
-            
+
             loading.style.display = 'flex';
             error.style.display = 'none';
             statusInfo.style.display = 'none';
             imageContainer.style.display = 'none';
             submitBtn.disabled = true;
-            hideSuggestions();
-            
+
             if (photo.src) {
-                URL.revokeObjectURL(photo.src);
+                try {
+                    URL.revokeObjectURL(photo.src);
+                } catch (err) {
+                }
             }
-            
+
             const startTime = Date.now();
-            
+
             try {
-                const response = await fetch(` + "`/fetch-photo?id=${encodeURIComponent(photoId)}`" + `);
-                
+                const response = await fetch(`/fetch-photo?id=${encodeURIComponent(photoId)}`);
+
                 const contentType = response.headers.get('content-type');
-                
+
                 if (!response.ok) {
-                    let errorMessage = ` + "`Failed to fetch image (${response.status})`" + `;
-                    
+                    let errorMessage = `Failed to fetch image (${response.status})`;
+
                     if (contentType && contentType.includes('application/json')) {
                         const errorData = await response.json();
                         errorMessage = errorData.error || errorMessage;
-                        
+
                         if (response.status === 404) {
-                            errorMessage = ` + "`🔍 Image '${photoId}' not found. Double-check your ID!`" + `;
+                            errorMessage = `🔍 Image '${photoId}' not found. Double-check your ID!`;
                         } else if (response.status === 403) {
-                            errorMessage = ` + "`🔒 Access denied for image '${photoId}'. You might not have permission.`" + `;
+                            errorMessage = `🔒 Access denied for image '${photoId}'. You might not have permission.`;
                         } else if (response.status === 500) {
-                            errorMessage = ` + "`⚠️ ${errorData.details || 'Server error occurred while fetching the image'}`" + `;
+                            errorMessage = `⚠️ ${errorData.details || 'Server error occurred while fetching the image'}`;
                         } else if (response.status === 408) {
-                            errorMessage = ` + "`⏱️ Request timed out. The image may be too large or the server is busy.`" + `;
+                            errorMessage = `⏱️ Request timed out. The image may be too large or the server is busy.`;
                         }
                     }
-                    
+
                     throw new Error(errorMessage);
                 }
-                
+
                 const blob = await response.blob();
                 const imageUrl = URL.createObjectURL(blob);
                 const loadTime = ((Date.now() - startTime) / 1000).toFixed(2);
-                
+
                 photo.onload = function() {
                     loading.style.display = 'none';
-                    statusInfo.textContent = ` + "`✅ Image loaded successfully in ${loadTime}s`" + `;
+                    statusInfo.textContent = `✅ Image loaded successfully in ${loadTime}s`;
                     statusInfo.style.display = 'block';
                     imageContainer.style.display = 'block';
                     submitBtn.disabled = false;
-                    
-                    addToRecentIds(photoId);
-                    
+
                     setTimeout(() => {
                         statusInfo.style.display = 'none';
                     }, 4000);
                 };
-                
+
                 photo.onerror = function() {
                     loading.style.display = 'none';
                     error.textContent = '❌ Failed to load the image. Please try again.';
                     error.style.display = 'block';
                     submitBtn.disabled = false;
-                    URL.revokeObjectURL(imageUrl);
+                    try {
+                        URL.revokeObjectURL(imageUrl);
+                    } catch (err) {
+                    }
                 };
-                
+
                 photo.src = imageUrl;
-                
+
             } catch (err) {
                 loading.style.display = 'none';
                 error.textContent = err.message;
