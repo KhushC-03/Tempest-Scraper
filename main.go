@@ -270,7 +270,14 @@ const htmlTemplate = `
             transform: none;
         }
         
-
+        .clear-history {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            font-size: 14px;
+            padding: 12px 24px;
+            margin-left: 12px;
+            min-width: auto;
+        }
+        
         .image-container {
             margin-top: 40px;
             border-radius: 20px;
@@ -279,12 +286,6 @@ const htmlTemplate = `
             display: none;
             border: 3px solid rgba(71, 85, 105, 0.5);
             position: relative;
-            /* Prevent iOS context menu from interfering */
-            -webkit-touch-callout: default;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
         }
         
         .image-container::before {
@@ -304,18 +305,9 @@ const htmlTemplate = `
             height: auto;
             display: block;
             transition: transform 0.3s ease;
-            /* Enable right-click/long-press save on mobile */
-            -webkit-touch-callout: default;
-            -webkit-user-select: auto;
-            -moz-user-select: auto;
-            -ms-user-select: auto;
-            user-select: auto;
-            /* Prevent drag on desktop but allow save on mobile */
-            -webkit-user-drag: none;
-            -khtml-user-drag: none;
-            -moz-user-drag: none;
-            -o-user-drag: none;
-            user-drag: none;
+            max-width: 100%;
+            height: auto;
+            border-radius: 16px;
         }
         
         .image-container:hover img {
@@ -457,7 +449,7 @@ const htmlTemplate = `
                         type="text" 
                         id="photoId" 
                         name="photoId" 
-                        value="89715C5328" 
+                        value="" 
                         placeholder="Enter your image ID..."
                         autocomplete="off"
                         required
@@ -469,7 +461,9 @@ const htmlTemplate = `
             <button type="submit" id="submitBtn">
                 <span class="btn-text">Get Image</span>
             </button>
-
+            <button type="button" id="clearHistoryBtn" class="clear-history" style="display: none;">
+                Clear History
+            </button>
         </form>
         
         <div class="loading" id="loading">
@@ -486,7 +480,7 @@ const htmlTemplate = `
         <div class="status-info" id="statusInfo"></div>
         
         <div class="image-container" id="imageContainer">
-            <img id="photo" src="" alt="Retrieved Image">
+            <img id="photo" src="" alt="Retrieved Image" crossorigin="anonymous">
             <div class="image-download-hint">
                 📱 On mobile: Long press the image to save to your camera roll
             </div>
@@ -494,43 +488,42 @@ const htmlTemplate = `
     </div>
 
     <script>
-        // Note: This uses in-memory storage for demo purposes
-        // In a real environment, replace with localStorage for persistence
-        let recentIds = ['89715C5328'];
+        let recentIds = [];
         
-        // Storage functions - replace with localStorage in production
         function loadRecentIds() {
             try {
-                // For production use: 
-                // const stored = localStorage.getItem('tempest-recent-ids');
-                // return stored ? JSON.parse(stored) : ['89715C5328'];
-                return recentIds;
+                const stored = localStorage.getItem('tempest-recent-ids');
+                return stored ? JSON.parse(stored) : [];
             } catch (e) {
                 console.warn('Could not load recent IDs:', e);
-                return ['89715C5328'];
+                return [];
             }
         }
         
         function saveRecentIds(ids) {
             try {
-                // For production use:
-                // localStorage.setItem('tempest-recent-ids', JSON.stringify(ids));
+                localStorage.setItem('tempest-recent-ids', JSON.stringify(ids));
                 recentIds = ids;
             } catch (e) {
                 console.warn('Could not save recent IDs:', e);
             }
         }
         
-        // Initialize recent IDs
         recentIds = loadRecentIds();
         
         const photoIdInput = document.getElementById('photoId');
         const suggestionsDiv = document.getElementById('suggestions');
+        const clearHistoryBtn = document.getElementById('clearHistoryBtn');
         
         photoIdInput.addEventListener('focus', showSuggestions);
         photoIdInput.addEventListener('input', filterSuggestions);
         
-
+        clearHistoryBtn.addEventListener('click', function() {
+            recentIds = [];
+            saveRecentIds(recentIds);
+            hideSuggestions();
+            clearHistoryBtn.style.display = 'none';
+        });
         
         document.addEventListener('click', function(e) {
             if (!e.target.closest('.input-container')) {
@@ -538,39 +531,44 @@ const htmlTemplate = `
             }
         });
         
-        // Prevent page refresh on image long-press (iOS Safari fix)
+        let touchStartY = 0;
+        let isImageTouch = false;
+        
+        document.addEventListener('touchstart', function(e) {
+            isImageTouch = e.target.tagName === 'IMG';
+            if (isImageTouch) {
+                touchStartY = e.touches[0].clientY;
+                e.stopPropagation();
+            }
+        }, { passive: false });
+        
+        document.addEventListener('touchmove', function(e) {
+            if (isImageTouch) {
+                e.stopPropagation();
+            }
+        }, { passive: false });
+        
+        document.addEventListener('touchend', function(e) {
+            if (isImageTouch) {
+                e.stopPropagation();
+            }
+            isImageTouch = false;
+        }, { passive: false });
+        
         document.addEventListener('contextmenu', function(e) {
             if (e.target.tagName === 'IMG') {
                 e.stopPropagation();
-                // Allow the context menu for image saving
                 return true;
             }
-        });
-        
-        // Prevent pull-to-refresh when interacting with images
-        let touchStartY = 0;
-        document.addEventListener('touchstart', function(e) {
-            if (e.target.closest('.image-container')) {
-                touchStartY = e.touches[0].clientY;
-            }
-        });
-        
-        document.addEventListener('touchmove', function(e) {
-            if (e.target.closest('.image-container')) {
-                const touchY = e.touches[0].clientY;
-                const touchDelta = touchY - touchStartY;
-                
-                // Prevent pull-to-refresh when scrolling up from image
-                if (touchDelta > 0 && window.scrollY === 0) {
-                    e.preventDefault();
-                }
-            }
+            e.preventDefault();
+            return false;
         });
         
         function showSuggestions() {
             if (recentIds.length > 0) {
                 updateSuggestionsList(recentIds);
                 suggestionsDiv.style.display = 'block';
+                clearHistoryBtn.style.display = 'inline-block';
             }
         }
         
@@ -633,14 +631,18 @@ const htmlTemplate = `
             recentIds.unshift(id);
             recentIds = recentIds.slice(0, 10);
             saveRecentIds(recentIds);
+            clearHistoryBtn.style.display = recentIds.length > 0 ? 'inline-block' : 'none';
         }
         
         function removeFromRecentIds(id) {
             recentIds = recentIds.filter(existingId => existingId !== id);
             saveRecentIds(recentIds);
-
+            if (recentIds.length === 0) {
+                clearHistoryBtn.style.display = 'none';
+            }
         }
         
+        clearHistoryBtn.style.display = recentIds.length > 0 ? 'inline-block' : 'none';
         
         document.getElementById('photoForm').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -665,6 +667,10 @@ const htmlTemplate = `
             imageContainer.style.display = 'none';
             submitBtn.disabled = true;
             hideSuggestions();
+            
+            if (photo.src) {
+                URL.revokeObjectURL(photo.src);
+            }
             
             const startTime = Date.now();
             
@@ -698,7 +704,6 @@ const htmlTemplate = `
                 const imageUrl = URL.createObjectURL(blob);
                 const loadTime = ((Date.now() - startTime) / 1000).toFixed(2);
                 
-                photo.src = imageUrl;
                 photo.onload = function() {
                     loading.style.display = 'none';
                     statusInfo.textContent = ` + "`✅ Image loaded successfully in ${loadTime}s`" + `;
@@ -712,6 +717,16 @@ const htmlTemplate = `
                         statusInfo.style.display = 'none';
                     }, 4000);
                 };
+                
+                photo.onerror = function() {
+                    loading.style.display = 'none';
+                    error.textContent = '❌ Failed to load the image. Please try again.';
+                    error.style.display = 'block';
+                    submitBtn.disabled = false;
+                    URL.revokeObjectURL(imageUrl);
+                };
+                
+                photo.src = imageUrl;
                 
             } catch (err) {
                 loading.style.display = 'none';
@@ -806,6 +821,8 @@ func main() {
 			fmt.Printf("[%s] SUCCESS: Serving image %s (Content-Length: %s) to %s\n", time.Now().Format("15:04:05"), photoId, contentLength, clientIP)
 			w.Header().Set("Content-Type", resp.Header.Get("Content-Type"))
 			w.Header().Set("Cache-Control", "public, max-age=3600")
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Headers", "*")
 			io.Copy(w, resp.Body)
 
 		case http.StatusForbidden:
