@@ -424,25 +424,25 @@ const htmlTemplate = `
             const startTime = Date.now();
 
             try {
-                const response = await fetch(`/fetch-photo?id=${encodeURIComponent(photoId)}`);
+                const response = await fetch(` + "`" + `/fetch-photo?id=${encodeURIComponent(photoId)}` + "`" + `);
 
                 const contentType = response.headers.get('content-type');
 
                 if (!response.ok) {
-                    let errorMessage = `Failed to fetch image (${response.status})`;
+                    let errorMessage = ` + "`" + `Failed to fetch image (${response.status})` + "`" + `;
 
                     if (contentType && contentType.includes('application/json')) {
                         const errorData = await response.json();
                         errorMessage = errorData.error || errorMessage;
 
                         if (response.status === 404) {
-                            errorMessage = `🔍 Image '${photoId}' not found. Double-check your ID!`;
+                            errorMessage = ` + "`" + `🔍 Image '${photoId}' not found. Double-check your ID!` + "`" + `;
                         } else if (response.status === 403) {
-                            errorMessage = `🔒 Access denied for image '${photoId}'. You might not have permission.`;
+                            errorMessage = ` + "`" + `🔒 Access denied for image '${photoId}'. You might not have permission.` + "`" + `;
                         } else if (response.status === 500) {
-                            errorMessage = `⚠️ ${errorData.details || 'Server error occurred while fetching the image'}`;
+                            errorMessage = ` + "`" + `⚠️ ${errorData.details || 'Server error occurred while fetching the image'}` + "`" + `;
                         } else if (response.status === 408) {
-                            errorMessage = `⏱️ Request timed out. The image may be too large or the server is busy.`;
+                            errorMessage = ` + "`" + `⏱️ Request timed out. The image may be too large or the server is busy.` + "`" + `;
                         }
                     }
 
@@ -455,7 +455,7 @@ const htmlTemplate = `
 
                 photo.onload = function() {
                     loading.style.display = 'none';
-                    statusInfo.textContent = `✅ Image loaded successfully in ${loadTime}s`;
+                    statusInfo.textContent = ` + "`" + `✅ Image loaded successfully in ${loadTime}s` + "`" + `;
                     statusInfo.style.display = 'block';
                     imageContainer.style.display = 'block';
                     submitBtn.disabled = false;
