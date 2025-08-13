@@ -93,6 +93,26 @@ const htmlTemplate = `
             font-weight: 400;
         }
         
+        .disclaimer {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            color: #4ade80;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            text-align: left;
+        }
+        
+        .disclaimer-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
         .warning {
             background: rgba(245, 158, 11, 0.1);
             border: 1px solid rgba(245, 158, 11, 0.3);
@@ -175,6 +195,9 @@ const htmlTemplate = `
             border-bottom: 1px solid #374151;
             transition: all 0.2s ease;
             font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         
         .suggestion-item:hover {
@@ -185,6 +208,20 @@ const htmlTemplate = `
         
         .suggestion-item:last-child {
             border-bottom: none;
+        }
+        
+        .suggestion-remove {
+            color: #f87171;
+            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(248, 113, 113, 0.1);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        
+        .suggestion-item:hover .suggestion-remove {
+            opacity: 1;
         }
         
         button {
@@ -233,6 +270,7 @@ const htmlTemplate = `
             transform: none;
         }
         
+
         .image-container {
             margin-top: 40px;
             border-radius: 20px;
@@ -241,6 +279,12 @@ const htmlTemplate = `
             display: none;
             border: 3px solid rgba(71, 85, 105, 0.5);
             position: relative;
+            /* Prevent iOS context menu from interfering */
+            -webkit-touch-callout: default;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
         }
         
         .image-container::before {
@@ -260,10 +304,32 @@ const htmlTemplate = `
             height: auto;
             display: block;
             transition: transform 0.3s ease;
+            /* Enable right-click/long-press save on mobile */
+            -webkit-touch-callout: default;
+            -webkit-user-select: auto;
+            -moz-user-select: auto;
+            -ms-user-select: auto;
+            user-select: auto;
+            /* Prevent drag on desktop but allow save on mobile */
+            -webkit-user-drag: none;
+            -khtml-user-drag: none;
+            -moz-user-drag: none;
+            -o-user-drag: none;
+            user-drag: none;
         }
         
         .image-container:hover img {
             transform: scale(1.02);
+        }
+        
+        .image-download-hint {
+            margin-top: 16px;
+            color: #94a3b8;
+            font-size: 0.85rem;
+            padding: 12px;
+            background: rgba(71, 85, 105, 0.2);
+            border-radius: 12px;
+            font-style: italic;
         }
         
         .loading {
@@ -360,6 +426,10 @@ const htmlTemplate = `
             input, button {
                 padding: 16px 20px;
             }
+            
+            .image-download-hint {
+                font-size: 0.8rem;
+            }
         }
     </style>
 </head>
@@ -367,6 +437,13 @@ const htmlTemplate = `
     <div class="container">
         <h1>Image Finder</h1>
         <p class="subtitle">Find and retrieve your images instantly ✨</p>
+        
+        <div class="disclaimer">
+            <div class="disclaimer-title">
+                🔒 Privacy Notice
+            </div>
+            <div>Images are fetched directly from Tempest and displayed in your browser only. No images are stored on our servers or visible to anyone else. Your image searches are completely private.</div>
+        </div>
         
         <div class="warning">
             ⚠️ Large images may take some time to process and load
@@ -392,6 +469,7 @@ const htmlTemplate = `
             <button type="submit" id="submitBtn">
                 <span class="btn-text">Get Image</span>
             </button>
+
         </form>
         
         <div class="loading" id="loading">
@@ -409,11 +487,42 @@ const htmlTemplate = `
         
         <div class="image-container" id="imageContainer">
             <img id="photo" src="" alt="Retrieved Image">
+            <div class="image-download-hint">
+                📱 On mobile: Long press the image to save to your camera roll
+            </div>
         </div>
     </div>
 
     <script>
+        // Note: This uses in-memory storage for demo purposes
+        // In a real environment, replace with localStorage for persistence
         let recentIds = ['89715C5328'];
+        
+        // Storage functions - replace with localStorage in production
+        function loadRecentIds() {
+            try {
+                // For production use: 
+                // const stored = localStorage.getItem('tempest-recent-ids');
+                // return stored ? JSON.parse(stored) : ['89715C5328'];
+                return recentIds;
+            } catch (e) {
+                console.warn('Could not load recent IDs:', e);
+                return ['89715C5328'];
+            }
+        }
+        
+        function saveRecentIds(ids) {
+            try {
+                // For production use:
+                // localStorage.setItem('tempest-recent-ids', JSON.stringify(ids));
+                recentIds = ids;
+            } catch (e) {
+                console.warn('Could not save recent IDs:', e);
+            }
+        }
+        
+        // Initialize recent IDs
+        recentIds = loadRecentIds();
         
         const photoIdInput = document.getElementById('photoId');
         const suggestionsDiv = document.getElementById('suggestions');
@@ -421,9 +530,40 @@ const htmlTemplate = `
         photoIdInput.addEventListener('focus', showSuggestions);
         photoIdInput.addEventListener('input', filterSuggestions);
         
+
+        
         document.addEventListener('click', function(e) {
             if (!e.target.closest('.input-container')) {
                 hideSuggestions();
+            }
+        });
+        
+        // Prevent page refresh on image long-press (iOS Safari fix)
+        document.addEventListener('contextmenu', function(e) {
+            if (e.target.tagName === 'IMG') {
+                e.stopPropagation();
+                // Allow the context menu for image saving
+                return true;
+            }
+        });
+        
+        // Prevent pull-to-refresh when interacting with images
+        let touchStartY = 0;
+        document.addEventListener('touchstart', function(e) {
+            if (e.target.closest('.image-container')) {
+                touchStartY = e.touches[0].clientY;
+            }
+        });
+        
+        document.addEventListener('touchmove', function(e) {
+            if (e.target.closest('.image-container')) {
+                const touchY = e.touches[0].clientY;
+                const touchDelta = touchY - touchStartY;
+                
+                // Prevent pull-to-refresh when scrolling up from image
+                if (touchDelta > 0 && window.scrollY === 0) {
+                    e.preventDefault();
+                }
             }
         });
         
@@ -457,11 +597,29 @@ const htmlTemplate = `
             ids.forEach(id => {
                 const div = document.createElement('div');
                 div.className = 'suggestion-item';
-                div.textContent = id;
-                div.addEventListener('click', function() {
+                
+                const idSpan = document.createElement('span');
+                idSpan.textContent = id;
+                
+                const removeBtn = document.createElement('span');
+                removeBtn.className = 'suggestion-remove';
+                removeBtn.textContent = '×';
+                removeBtn.title = 'Remove from history';
+                
+                div.appendChild(idSpan);
+                div.appendChild(removeBtn);
+                
+                idSpan.addEventListener('click', function() {
                     photoIdInput.value = id;
                     hideSuggestions();
                 });
+                
+                removeBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    removeFromRecentIds(id);
+                    filterSuggestions();
+                });
+                
                 suggestionsDiv.appendChild(div);
             });
         }
@@ -474,7 +632,15 @@ const htmlTemplate = `
             recentIds = recentIds.filter(existingId => existingId !== id);
             recentIds.unshift(id);
             recentIds = recentIds.slice(0, 10);
+            saveRecentIds(recentIds);
         }
+        
+        function removeFromRecentIds(id) {
+            recentIds = recentIds.filter(existingId => existingId !== id);
+            saveRecentIds(recentIds);
+
+        }
+        
         
         document.getElementById('photoForm').addEventListener('submit', async function(e) {
             e.preventDefault();
